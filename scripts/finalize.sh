@@ -48,11 +48,14 @@ SUB_FILE="$FINAL/subtitles.ass"
 if [ -f "$SUB_FILE" ]; then
   FFMPEG_BIN=$(ls /opt/homebrew/Cellar/ffmpeg-full/*/bin/ffmpeg 2>/dev/null | head -1)
   [ -z "$FFMPEG_BIN" ] && FFMPEG_BIN=ffmpeg
+  # H.265/HEVC for ~30-40% smaller files than H.264 at equivalent quality —
+  # matters because subtitle burn-in forces video re-encode and we want to
+  # stay close to the original source size. tag:v hvc1 keeps QuickTime / iOS happy.
   "$FFMPEG_BIN" -y -hide_banner -loglevel error \
     -i "$FINAL/dubbed_video.mp4" \
     -vf "subtitles=$SUB_FILE:fontsdir=$FONT_DIR" \
-    -c:v libx264 -preset fast -crf 20 \
-    -c:a copy \
+    -c:v libx265 -preset fast -crf 28 -tag:v hvc1 \
+    -c:a copy -movflags +faststart \
     "$FINAL/dubbed_video_subtitled.mp4"
   echo "OK: $FINAL/dubbed_video_subtitled.mp4 (Korean subtitles burned in)"
 fi
