@@ -136,6 +136,82 @@ User-validated patterns (2026-05-14). Apply consistently for every utterance.
 - `here we are in front of X` → "우리는 X 앞에 있어요" (literal works)
 - `pretty much` → "거의" or "딱히"
 
+## Long-form videos — chunked linear workflow
+
+For videos longer than ~10 minutes (= >150 sentences), don't try to write `sentences.json` in one shot. Append in linear chunks and let the **accumulated reference** do the consistency work for you.
+
+### Why linear, not parallel
+
+The video is **not split**. yt-dlp downloads it once, Soniox transcribes it once, synthesis runs over the full `sentences.json`. The only thing chunked is **your translation work**.
+
+Going linear (chunk N reads chunks 1..N-1 as context) gives you:
+- **Style propagation** — the tone (자막체 endings, subject explicitness, discourse marker handling) set in chunk 1 carries through. New chunks self-correct against earlier ones.
+- **Implicit consistency for things glossary.json can't capture** — idiom interpretation, speaker personality (Karpathy 톤 vs interviewer 톤), comma/period split rhythm, repetition handling.
+- **Growing glossary** — when you discover a new proper noun mid-transcript, surface it, append to `glossary.json`, and from that chunk on it's a hard rule.
+
+Parallel chunking *can* keep glossary terms consistent (it's a lookup table), but it loses the soft-reference layer. For short videos (≤30min), linear is fast enough that the trade-off doesn't matter.
+
+### Chunk sizing — empirical
+
+| Video length | Approx sentences | Recommended chunks |
+|---|---|---|
+| 5 min | ~75 | 1 (single pass) |
+| 30 min | ~450 | 6–8 (50–60 per chunk) |
+| 1 h | ~900 | 12–15 |
+| 2 h | ~1800 | 25–30 |
+
+Chunk size sweet spot is **~50–60 sentences**. Smaller = more orchestration overhead. Larger = harder to keep coherent in one pass.
+
+### First chunk is the style seed — slow down here
+
+The first chunk (especially the first ~30 entries) locks in:
+- The polite-ending palette you'll use (`-어요/-네요/-죠/-이에요` — pick a balance)
+- How you handle each speaker's voice (host vs guest 톤)
+- Discourse marker translations
+- Subject explicitness pattern
+
+Once locked in, chunks 2..N can move much faster — most decisions are already made. Spend disproportionate care on chunk 1.
+
+### Append pattern
+
+Don't rewrite the whole file each chunk. Read existing, append, write back:
+
+```python
+import json
+from pathlib import Path
+TARGET = Path("output/<video_id>/3_translation/sentences.json")
+
+existing = json.loads(TARGET.read_text()) if TARGET.exists() else []
+new = [
+  {"en": "...", "ko": "...", "ko_tts": "..."},  # ko_tts only when Latin brand → 한글 음역 needed
+  ...
+]
+combined = existing + new
+TARGET.write_text(json.dumps(combined, ensure_ascii=False, indent=2) + "\n")
+print(f"appended {len(new)} → total {len(combined)}")
+```
+
+Save this as a tiny helper and reuse across chunks. **Sentence order in the final array must follow the transcript** — appending preserves that automatically as long as you proceed left-to-right through the transcript.
+
+### New-term protocol
+
+When you encounter a proper noun, product name, or technical term not in `glossary.json`:
+1. Translate it inline in the current chunk using your best guess.
+2. At the **end of that chunk's turn**, surface it to the user in your reply: *"새로 등장한 term: `Nanobanana` → '나노바나나'로 처리했어요. glossary에 추가할까요?"*
+3. On confirmation, append to `glossary.json` (sorted by category then canonical name).
+4. From the next chunk onward, the term is a hard reference — no more interpretation needed.
+
+This way the glossary **grows during the dub**, and later chunks benefit from earlier discoveries.
+
+### Audit before Phase 3
+
+After the last chunk, before running `dub.sh` again for Phase 3:
+- Scan for new proper nouns you handled inconsistently across chunks (`grep -i "<term>"` over `sentences.json`).
+- Check that any added glossary terms are applied retroactively where they appeared in earlier chunks.
+- Spot-check 3–5 random sentences from each major section for tone consistency.
+
+5 minutes of audit catches issues that would otherwise show up as awkward 자막 mid-watch.
+
 ## Output structure
 
 ```
