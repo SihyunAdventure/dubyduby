@@ -70,11 +70,26 @@ def main():
     if len(onsets) == 0 or len(cues) == 0:
         sys.exit("No data — empty audio or subtitles")
 
-    # Match: each cue.start → nearest onset
+    # Match: each cue.start → nearest onset within ±SEARCH_RADIUS_MS.
+    # Searching globally for "nearest" is wrong: a cue in a dense-speech region has no
+    # nearby onset (no silence to detect), and global-nearest picks an onset seconds
+    # away from a completely different sentence — that's a measurement artifact, not
+    # a sync error. Radius-bounded search separates "actually misaligned" from
+    # "not measurable here."
+    SEARCH_RADIUS_MS = 500
+
     deltas = []
+    no_nearby = 0
     for i, (cue_start, _) in enumerate(cues):
-        # Find nearest onset
-        nearest = min(onsets, key=lambda o: abs(o - cue_start))
+        candidates = [o for o in onsets if abs(o - cue_start) <= SEARCH_RADIUS_MS]
+        if not candidates:
+            no_nearby += 1
+            if i < 15 or i >= len(cues) - 5:
+                print(f"  cue[{i:>3}] start={cue_start:>6}ms  onset=    N/A  Δ=  N/A  (no onset within ±{SEARCH_RADIUS_MS}ms — dense speech)")
+            elif i == 15:
+                print("  ...")
+            continue
+        nearest = min(candidates, key=lambda o: abs(o - cue_start))
         delta = cue_start - nearest
         deltas.append(delta)
         if i < 15 or i >= len(cues) - 5:
@@ -85,12 +100,16 @@ def main():
 
     print()
     import statistics
+    if not deltas:
+        print("No measurable cues (every cue is in dense speech).")
+        return
     abs_deltas = [abs(d) for d in deltas]
+    print(f"Measurable cues:   {len(deltas)}/{len(cues)} (N/A: {no_nearby} in dense speech)")
     print(f"Mean abs delta:    {statistics.mean(abs_deltas):>6.0f}ms")
     print(f"Median abs delta:  {statistics.median(abs_deltas):>6.0f}ms")
     print(f"Max abs delta:     {max(abs_deltas):>6}ms")
-    print(f"Within ±100ms:     {sum(1 for d in abs_deltas if d <= 100)}/{len(deltas)}")
-    print(f"Within ±300ms:     {sum(1 for d in abs_deltas if d <= 300)}/{len(deltas)}")
+    print(f"Within ±100ms:     {sum(1 for d in abs_deltas if d <= 100)}/{len(deltas)} of measurable")
+    print(f"Within ±300ms:     {sum(1 for d in abs_deltas if d <= 300)}/{len(deltas)} of measurable")
 
 
 if __name__ == "__main__":
