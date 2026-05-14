@@ -23,9 +23,9 @@ fi
 # shellcheck disable=SC1091
 source .venv/bin/activate
 
-# 3. Python deps (supertonic includes onnxruntime / numpy / soundfile)
-echo "[setup] installing supertonic + deps..."
-uv pip install -q supertonic
+# 3. Python deps (supertonic includes onnxruntime / numpy / soundfile; librosa for pitch analysis)
+echo "[setup] installing supertonic + librosa..."
+uv pip install -q supertonic librosa
 
 # 4. Pretendard font (for subtitles) — extract TTF from release zip
 mkdir -p fonts

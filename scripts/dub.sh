@@ -32,11 +32,12 @@ else
   echo "[dub] transcript exists, skip transcribe"
 fi
 
+# venv python — explicit path is more reliable than `source activate` under set -e
+PY=.venv/bin/python
+
 # Speaker analysis (pitch → gender → voice) — runs once per video
 if [ ! -f "$BASE/2_transcript/speakers.json" ]; then
-  # shellcheck disable=SC1091
-  source .venv/bin/activate
-  python3 scripts/analyze_speakers.py "$VIDEO_ID"
+  "$PY" scripts/analyze_speakers.py "$VIDEO_ID"
 else
   echo "[dub] speakers exists, skip analyze"
 fi
@@ -61,10 +62,8 @@ EOF
 fi
 
 # Phase 2 — sentences.json exists, finalize
-# shellcheck disable=SC1091
-source .venv/bin/activate
-python3 scripts/match_timing.py "$VIDEO_ID"
-python3 scripts/synthesize.py "$VIDEO_ID"
+"$PY" scripts/match_timing.py "$VIDEO_ID"
+"$PY" scripts/synthesize.py "$VIDEO_ID"
 bash scripts/finalize.sh "$VIDEO_ID"
 
 OUT="output/$VIDEO_ID/6_final/dubbed_video.mp4"

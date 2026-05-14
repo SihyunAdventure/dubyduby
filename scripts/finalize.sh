@@ -17,15 +17,16 @@ FINAL="$BASE/6_final"
 SRC_VIDEO="$BASE/1_source/video.mp4"
 mkdir -p "$INTER" "$FINAL"
 
+# venv python — explicit path is more reliable than `source activate` under set -e
+PY=.venv/bin/python
+
 # 1. Video duration in ms (used for silent buffer)
 VID_DUR_S=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$SRC_VIDEO")
-VID_DUR_MS=$(python3 -c "print(int($VID_DUR_S * 1000))")
+VID_DUR_MS=$("$PY" -c "print(int($VID_DUR_S * 1000))")
 echo "[finalize] video duration: ${VID_DUR_S}s (${VID_DUR_MS}ms)"
 
 # 2. Place per-utt wavs at source timeline + per-utt atempo
-# shellcheck disable=SC1091
-source .venv/bin/activate
-python3 scripts/place_timeline.py "$VIDEO_ID" "$VID_DUR_MS"
+"$PY" scripts/place_timeline.py "$VIDEO_ID" "$VID_DUR_MS"
 
 # 3. silencedetect on dub for verification + subtitle snap
 ffmpeg -hide_banner -i "$FINAL/dubbed_audio.wav" \
@@ -40,7 +41,7 @@ ffmpeg -y -hide_banner -loglevel error \
 echo "OK: $FINAL/dubbed_video.mp4"
 
 # 5. Generate ASS subtitle + burn-in version (timing from placement.json)
-python3 scripts/subtitle.py "$VIDEO_ID"
+"$PY" scripts/subtitle.py "$VIDEO_ID"
 
 FONT_DIR="$(pwd)/fonts"
 SUB_FILE="$FINAL/subtitles.ass"
