@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# dubyduby pre-commit safety net.
+#
+# Blocks commits that include:
+#   - obviously dev-only documents (NEXT.md, PLAN.md, NOTES.md, SCRATCH.md, etc.)
+#   - .env / secrets / token files
+#   - files larger than 90 MB (GitHub hard limit is 100 MB)
+#
+# The .gitignore catches these in normal use; this hook is the last line of
+# defense in case someone -f forces them in.
+set -e
+
+red()   { printf "\033[31m%s\033[0m\n" "$*"; }
+ylw()   { printf "\033[33m%s\033[0m\n" "$*"; }
+
+staged_files() {
+  git diff --cached --name-only --diff-filter=ACM
+}
+
+bail=0
+
+# 1. Suspicious dev-note filenames
+suspicious_names_re='^(NEXT|PLAN|TODO|NOTES|SCRATCH|IDEAS|DRAFT|MEMO|TEMP|WIP|VISION|PRINCIPLES|DESIGN|ROADMAP|SESSION_.+|AGENT_.+|CLAUDE_.+)\.md$|\.(draft|local|scratch|private)\.md$|^(\.scratch|\.local|_dev|notes)/'
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  base="$(basename "$f")"
+  if echo "$f" | grep -Eq "$suspicious_names_re" || echo "$base" | grep -Eq "$suspicious_names_re"; then
+    red "[pre-commit] dev-note file should not be committed: $f"
+    bail=1
+  fi
+done < <(staged_files)
+
+# 2. Secrets / env / token files
+secret_re='(^|/)\.env($|\.[^.]+$)|(^|/)(secrets?|credentials?|token|apikey|api_key)([._-][^/]+)?(\.(env|json|yaml|yml|txt|sh))?$'
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  # Allow .env.example explicitly
+  case "$f" in
+    .env.example|*/.env.example) continue ;;
+  esac
+  if echo "$f" | grep -Eiq "$secret_re"; then
+    red "[pre-commit] possible secret file: $f"
+    bail=1
+  fi
+done < <(staged_files)
+
+# 3. Large files (> 90 MB)
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  [ -f "$f" ] || continue
+  size=$(stat -f%z "$f" 2>/dev/null || stat -c%s "$f" 2>/dev/null || echo 0)
+  if [ "$size" -gt 94371840 ]; then  # 90 MB
+    mb=$((size / 1024 / 1024))
+    red "[pre-commit] file >90MB (GitHub limit 100MB): $f (${mb} MB)"
+    ylw "             consider Git LFS or GitHub Release asset instead"
+    bail=1
+  fi
+done < <(staged_files)
+
+if [ "$bail" = "1" ]; then
+  echo
+  red "Commit blocked by pre-commit hook (scripts/git-hooks/pre-commit)."
+  ylw "To bypass intentionally (rare): git commit --no-verify"
+  exit 1
+fi
+
+exit 0

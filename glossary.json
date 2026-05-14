@@ -1,0 +1,167 @@
+{
+  "_comment": "STT misread → canonical 매핑 + Korean phonetic. Agent reads this before writing sentences.json. New terms: surface to user, then append here.",
+  "terms": [
+    {
+      "canonical": "Claude Code",
+      "stt_misreads": ["Cloth Code", "Cloud Code", "Claude Co"],
+      "korean_phonetic": "클로드 코드",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "Andrej Karpathy",
+      "stt_misreads": ["Andre Carpathy", "Andre Karpathy", "Andrei Karpathy", "Andrew Karpathy"],
+      "korean_phonetic": "안드레이 카파시",
+      "category": "person"
+    },
+    {
+      "canonical": "OpenAI",
+      "stt_misreads": ["Open AI"],
+      "korean_phonetic": "오픈 에이아이",
+      "category": "company"
+    },
+    {
+      "canonical": "Anthropic",
+      "stt_misreads": ["Anthropi", "Antropic"],
+      "korean_phonetic": "앤트로픽",
+      "category": "company"
+    },
+    {
+      "canonical": "Tesla",
+      "stt_misreads": [],
+      "korean_phonetic": "테슬라",
+      "category": "company"
+    },
+    {
+      "canonical": "Autopilot",
+      "stt_misreads": ["auto pilot"],
+      "korean_phonetic": "오토파일럿",
+      "category": "tech"
+    },
+    {
+      "canonical": "vibe coding",
+      "stt_misreads": ["vibecoding", "vibe-coding"],
+      "korean_phonetic": "바이브 코딩",
+      "category": "ai-concept"
+    },
+    {
+      "canonical": "OpenClaw",
+      "stt_misreads": ["Open Claw", "Open Clog"],
+      "korean_phonetic": "오픈클로",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "ChatGPT",
+      "stt_misreads": ["Chat GPT", "Chat-GPT"],
+      "korean_phonetic": "챗지피티",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "Bash",
+      "stt_misreads": [],
+      "korean_phonetic": "배시",
+      "category": "tech"
+    },
+    {
+      "canonical": "agentic",
+      "stt_misreads": ["a-gentic", "agentik"],
+      "korean_phonetic": "에이전틱",
+      "category": "ai-concept"
+    },
+    {
+      "canonical": "menu gen",
+      "stt_misreads": ["menu-gen", "menu generation"],
+      "korean_phonetic": "메뉴 젠",
+      "category": "ai-concept"
+    },
+    {
+      "canonical": "GPT",
+      "stt_misreads": ["G.P.T.", "G P T"],
+      "korean_phonetic": "지피티",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "LLM",
+      "stt_misreads": ["L.L.M.", "L L M"],
+      "korean_phonetic": "엘엘엠",
+      "category": "ai-concept"
+    },
+    {
+      "canonical": "AI",
+      "stt_misreads": ["A.I.", "A I"],
+      "korean_phonetic": "에이아이",
+      "category": "ai-concept"
+    },
+    {
+      "canonical": "Twitter",
+      "stt_misreads": [],
+      "korean_phonetic": "트위터",
+      "category": "social"
+    },
+    {
+      "canonical": "X",
+      "stt_misreads": [],
+      "korean_phonetic": "엑스",
+      "category": "social"
+    },
+    {
+      "canonical": "GPT-5",
+      "stt_misreads": ["GPT 5", "GPT five"],
+      "korean_phonetic": "지피티 오",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "Gemini",
+      "stt_misreads": ["Geminai", "Gemini AI"],
+      "korean_phonetic": "제미나이",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "Mythos",
+      "stt_misreads": ["Methos", "Mithos"],
+      "korean_phonetic": "미토스",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "Claude",
+      "stt_misreads": ["Cloth", "Cloud"],
+      "korean_phonetic": "클로드",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "Sonnet",
+      "stt_misreads": ["Son It", "Sonet"],
+      "korean_phonetic": "소넷",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "Opus",
+      "stt_misreads": ["O Puss", "Opuss"],
+      "korean_phonetic": "오푸스",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "Haiku",
+      "stt_misreads": ["Hi Coo", "Haikoo"],
+      "korean_phonetic": "하이쿠",
+      "category": "ai-product"
+    },
+    {
+      "canonical": "RAG",
+      "stt_misreads": ["R.A.G.", "rag"],
+      "korean_phonetic": "랙",
+      "category": "ai-concept"
+    },
+    {
+      "canonical": "fine-tuning",
+      "stt_misreads": ["finetuning", "fine tuning"],
+      "korean_phonetic": "파인튜닝",
+      "category": "ai-concept"
+    },
+    {
+      "canonical": "dubyduby",
+      "stt_misreads": ["dub duby", "doubie doubie", "duby duby"],
+      "korean_phonetic": "더비더비",
+      "category": "product"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+.venv/
+
+# Build outputs
+dist/
+
+# macOS
+.DS_Store
+
+# Local env files
+.env
+.env.local
+
+# Editor
+.vscode/
+.idea/
+
+# OMC orchestration state
+.omc/
+
+# Dev handoff notes / drafts / scratch — local only, never for public repo.
+# Two patterns: (1) common single-file names, (2) wildcard suffixes,
+# (3) dedicated dev directories. Add new patterns here, not new tracked files.
+NEXT.md
+PLAN.md
+TODO.md
+NOTES.md
+SCRATCH.md
+IDEAS.md
+DRAFT.md
+MEMO.md
+TEMP.md
+WIP.md
+VISION.md
+PRINCIPLES.md
+DESIGN.md
+ROADMAP.md
+SESSION_*.md
+AGENT_*.md
+CLAUDE_*.md
+*.draft.md
+*.local.md
+*.scratch.md
+*.private.md
+.scratch/
+.local/
+_dev/
+notes/
+
+# Bundled sidecar binaries (downloaded by scripts/setup.sh)
+binaries/
+
+# Pretendard font (downloaded by scripts/setup.sh)
+fonts/
+
+# Per-video dub output (each video_id folder; mp4/wav files are too large)
+output/
+
