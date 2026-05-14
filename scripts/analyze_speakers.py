@@ -24,6 +24,15 @@ import numpy as np
 F0_GENDER_BOUNDARY_HZ = 165.0  # below = M, above = F (rough industry standard)
 SAMPLE_LIMIT_SEC = 30  # max audio per speaker for pitch analysis
 
+# Auto-merge thresholds: Soniox sometimes splits one speaker into two when audio
+# environment changes (intro narration vs in-conversation, mic switches, BGM). A
+# "minor" speaker with very few tokens AND a close pitch match to a "dominant"
+# speaker is almost certainly the same person — assign the same voice so the dub
+# sounds like one consistent speaker.
+MINOR_SPEAKER_TOKEN_FRAC = 0.05  # ≤5% of tokens → candidate for merging
+DOMINANT_SPEAKER_TOKEN_FRAC = 0.10  # ≥10% of tokens → can absorb a minor
+MERGE_F0_DELTA_HZ = 10.0  # pitch difference threshold for merging
+
 
 def main():
     if len(sys.argv) != 2:
@@ -34,13 +43,15 @@ def main():
     audio_path = base / "1_source" / "audio.mp3"
     tokens = json.load(open(base / "2_transcript" / "tokens.json"))["tokens"]
 
-    # Collect speaker → list of (start_ms, end_ms)
+    # Collect speaker → list of (start_ms, end_ms) + per-speaker token counts
     ranges = {}
+    token_counts = {}
     for t in tokens:
         spk = t.get("speaker")
         if not spk:
             continue
         ranges.setdefault(spk, []).append((t["start_ms"], t["end_ms"]))
+        token_counts[spk] = token_counts.get(spk, 0) + 1
 
     if not ranges:
         print("[speakers] no speaker info — diarization not enabled or single speaker")
@@ -74,16 +85,48 @@ def main():
                 "voice": None,  # filled below
             }
 
-    # Assign voices: per-gender increment (M1, M2, ... and F1, F2, ...)
+    # Detect minor speakers that should be merged into a close-pitch dominant
+    # speaker. Soniox sometimes splits one person across two IDs when audio
+    # context shifts (intro narration → in-conversation, mic distance, BGM).
+    total_tokens = sum(token_counts.values()) if token_counts else 0
+    merges = {}  # minor_spk → dominant_spk
+    if total_tokens > 0:
+        for minor in sorted(out.keys()):
+            frac = token_counts.get(minor, 0) / total_tokens
+            if frac > MINOR_SPEAKER_TOKEN_FRAC:
+                continue
+            # Find dominant speaker with closest f0 and same gender
+            candidates = [
+                (spk, abs(out[spk]["f0_median_hz"] - out[minor]["f0_median_hz"]))
+                for spk in out
+                if spk != minor
+                and out[spk]["gender"] == out[minor]["gender"]
+                and token_counts.get(spk, 0) / total_tokens >= DOMINANT_SPEAKER_TOKEN_FRAC
+            ]
+            if not candidates:
+                continue
+            best, delta = min(candidates, key=lambda x: x[1])
+            if delta <= MERGE_F0_DELTA_HZ:
+                merges[minor] = best
+
+    # Assign voices: per-gender increment, skipping minor speakers
+    # (they get the same voice as their dominant counterpart below)
     m_idx = 0
     f_idx = 0
     for spk in sorted(out.keys()):
+        if spk in merges:
+            continue  # voice assigned later
         if out[spk]["gender"] == "M":
             m_idx += 1
             out[spk]["voice"] = f"M{min(m_idx, 5)}"
         else:
             f_idx += 1
             out[spk]["voice"] = f"F{min(f_idx, 5)}"
+
+    # Assign merged minor speakers the same voice as their dominant target
+    for minor, dominant in merges.items():
+        out[minor]["voice"] = out[dominant]["voice"]
+        out[minor]["merged_into"] = dominant
 
     speakers_path = base / "2_transcript" / "speakers.json"
     json.dump(out, open(speakers_path, "w"), ensure_ascii=False, indent=2)
@@ -98,9 +141,11 @@ def main():
         lines.append(f"| {spk} | {s['gender']} | {s['f0_median_hz']} | {s['voice']} |")
     md.write_text("\n".join(lines) + "\n")
 
-    print(f"[speakers] {len(out)} speakers → {speakers_path}")
+    n_unique = len({info["voice"] for info in out.values()})
+    print(f"[speakers] {len(out)} raw → {n_unique} unique voices → {speakers_path}")
     for spk, info in sorted(out.items()):
-        print(f"  {spk}: {info['gender']} ({info['f0_median_hz']:.1f}Hz) → {info['voice']}")
+        tag = f" (merged → spk {info['merged_into']})" if "merged_into" in info else ""
+        print(f"  {spk}: {info['gender']} ({info['f0_median_hz']:.1f}Hz) → {info['voice']}{tag}")
 
 
 if __name__ == "__main__":
